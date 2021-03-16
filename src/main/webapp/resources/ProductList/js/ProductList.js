@@ -3,23 +3,36 @@ var totalPage = Math.ceil($.cookie("productCnt")/6);	//총 페이지 ex)의류 �
 var buttonHtml = "";
 var data;
 
+//버튼 html 생성하는 함수
+function createButton(page) {
+	var turn = Math.ceil(page/5);	//1페이지~5페이지 : 1턴, 6페이지~10페이지 : 2턴 ...
+	buttonHtml = '';	//button관련 html 코드
+	
+	if (turn!==1) {	//1턴이 아니면 이전버튼 추가
+		buttonHtml = '<button id=\"prevButton\" type=\"button\" class=\"btn btn-light\">이전</button>';
+	}
+	
+	if (totalPage>5*turn) {	//해당 턴의 마지막 페이지가(2턴에서 마지막 페이지는 10페이지) 해당 카테고리의 최종 페이지보다 작으면
+		for (var p=turn*5-4; p<=5*turn; p++) {
+			buttonHtml += '<button type=\"button\" class=\"btn btn-light pageButton\" >' + p + '</button>';
+		}
+		buttonHtml += '<button id=\"nextButton\" type=\"button\" class=\"btn btn-light\">다음</button>';	//다음 버튼 추가
+	} else {	//해당 턴의 마지막 페이지가(2턴에서 마지막 페이지는 10페이지) 해당 카테고리의 최종 페이지이면
+		for (var p=turn*5-4; p<=totalPage; p++) {
+			buttonHtml += '<button type=\"button\" class=\"btn btn-light pageButton\" >' + p + '</button>';	//최종 페이지까지만 버튼 생성
+		}
+	}
+	
+	$("#pageButtonGroup").html(buttonHtml);	//Button div에 html 코드 추가
+}
+
 $(window).ready(function() {
 	data = {"page":1};	//서버에 전달할 데이터
 	
-	if (totalPage>5) {
-		for (var page=1; page<=5; page++) {
-			buttonHtml += "<button type=\"button\" class=\"btn btn-light pageButton\" index=\"" + page + "\">" + page + "</button>";
-		}
-		buttonHtml += "<button id=\"nextButton\" type=\"button\" class=\"btn btn-light\">다음</button>";
-	} else {
-		for (var page=1; page<=totalPage; page++) {
-			buttonHtml += "<button type=\"button\" class=\"btn btn-light pageButton\" index=\"" + page + "\">" + page + "</button>";
-		}
-	}
-	$("#pageButtonGroup").html(buttonHtml);
-	$(".pageButton").first().css({background:"black", color:"white"});
+	createButton(1);	//버튼 html 생성하는 함수 호출
+	$(".pageButton").first().css({background:"black", color:"white"});	//현재 페이지 버튼에 스타일 변경
 	
-	pagingProduct(data);
+	pagingProduct(data);	//axios를 활용해 서버에서 해당 페이지의 상품 정보를 가져오기 위한 함수 호출
 });
 
 //페이지버튼 클릭했을 때
@@ -33,43 +46,25 @@ $(document).on("click", ".pageButton", function() {
 
 //다음페이지 클릭했을 때
 $(document).on("click", "#nextButton", function() {
-	data = {"page":Number($(".pageButton").last().text())+1};
-				
-	buttonHtml = "<button id=\"prevButton\" type=\"button\" class=\"btn btn-light\">이전</button>";
-	if (totalPage>=data.page+5) {
-		for (var page=data.page; page<data.page+5; page++) {
-			buttonHtml += "<button type=\"button\" class=\"btn btn-light pageButton\" index=\"" + page + "\">" + page + "</button>";
-		}
-		buttonHtml += "<button id=\"nextButton\" type=\"button\" class=\"btn btn-light\">다음</button>";
-	} else {
-		for (var page=data.page; page<=totalPage; page++) {
-			buttonHtml += "<button type=\"button\" class=\"btn btn-light pageButton\" index=\"" + page + "\">" + page + "</button>";
-		}
-	}
-	$("#pageButtonGroup").html(buttonHtml);
-	$(".pageButton").first().css({background:"black", color:"white"});
+	data = {"page":Number($(".pageButton").last().text())+1};	//서버에 전달할 데이터
 	
-	pagingProduct(data);
+	createButton(Number($(".pageButton").last().text())+1);	//버튼 html 생성하는 함수 호출
+	$(".pageButton").first().css({background:"black", color:"white"});	//현재 페이지 버튼에 스타일 변경
+	
+	pagingProduct(data);	//axios를 활용해 서버에서 해당 페이지의 상품 정보를 가져오기 위한 함수 호출
 });
 
 //이전버튼 클릭했을 때
 $(document).on("click", "#prevButton", function() {
-	data = {"page":Number($(".pageButton").first().text())-1};
-				
-	buttonHtml = "";
-	if (data.page-5!=0) {
-		buttonHtml = "<button id=\"prevButton\" type=\"button\" class=\"btn btn-light\">이전</button>";
-	}
-	for (var page=data.page-4; page<=data.page; page++) {
-		buttonHtml += "<button type=\"button\" class=\"btn btn-light pageButton\" index=\"" + page + "\">" + page + "</button>";
-	}
-	buttonHtml += "<button id=\"nextButton\" type=\"button\" class=\"btn btn-light\">다음</button>";
-	$("#pageButtonGroup").html(buttonHtml);
-	$(".pageButton").last().css({background:"black", color:"white"});
+	data = {"page":Number($(".pageButton").first().text())-1};	//서버에 전달할 데이터
 	
-	pagingProduct(data);		
-});
+	createButton(Number($(".pageButton").first().text())-1);	//버튼 html 생성하는 함수 호출
+	$(".pageButton").last().css({background:"black", color:"white"});	//현재 페이지 버튼에 스타일 변경
+	
+	pagingProduct(data);		//axios를 활용해 서버에서 해당 페이지의 상품 정보를 가져오기 위한 함수 호출
+});	
 
+//axios를 활용해 서버에서 해당 페이지의 상품 정보를 가져와 상품 리스트 목록을 작성하는 함수
 function pagingProduct(data) {
 	axios.post("/ProductList/paging/" + categoryCode, data).then(function(res) {
 		var html = "";
