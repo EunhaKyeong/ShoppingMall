@@ -69,70 +69,36 @@ public class MainController {
 	}
 	
 	//카테고리별 상품 리스트 페이지
-	   @RequestMapping("/ProductList/{categoryCode}")
-	   public String productByCategory(@PathVariable("categoryCode") int categoryCode, Model model, 
-			   @CookieValue(value="productCnt", required=false) Cookie cookieCnt, HttpServletResponse response) {
+	@RequestMapping("/ProductList/{categoryCode}")
+	public String productByCategory(@PathVariable("categoryCode") int categoryCode, Model model, 
+			@CookieValue(value="productCnt", required=false) Cookie cookieCnt, HttpServletResponse response) {
 
-		  //카테고리 항목
-	      List<CategoryVO> categoryVOList = pm.getCategory();
-	      model.addAttribute("categories", categoryVOList);
+		//카테고리 항목
+	    List<CategoryVO> categoryVOList = pm.getCategory();
+	    model.addAttribute("categories", categoryVOList);
 	      
-	      //상품 총 갯수 쿠키에 저장
-	      String cnt = Integer.toString(pm.getCount(categoryCode));
-	      if (cookieCnt==null) {
-	    	  cookieCnt = new Cookie("productCnt", cnt);
-	      } else if (!cookieCnt.getValue().equals(cnt)) {
-	    	  cookieCnt.setValue(cnt);
-	      }
-	      response.addCookie(cookieCnt);
-	      //총페이지
-//	      int pageNum = (int) (pm.getCount(categoryCode)/6)+1;
-//	      model.addAttribute("pageNum", pageNum);
+	    //해당 카테고리의 상품 총 갯수 쿠키에 저장
+	    String productCntByCategory = Integer.toString(pm.getCount(categoryCode));
+	    if (cookieCnt==null) {
+	    	cookieCnt = new Cookie("productCnt", productCntByCategory);
+	    } else if (!cookieCnt.getValue().equals(productCntByCategory)) {
+	    	cookieCnt.setValue(productCntByCategory);
+	    }
+	    response.addCookie(cookieCnt);
 	      
-	    //getListByCategory 다중쿼리문 해쉬맵
-//	      HashMap<String, Object> parameterHm = new HashMap<String, Object>();
-//	      parameterHm.put("categoryCode", categoryCode);
-//	      parameterHm.put("startIdx", 0);
-	      
-	    //상품리스트 -1페이지
-//	      List<ProductVO> productVOList = pm.getListByCategory(parameterHm);
-//	      model.addAttribute("products", productVOList);
-	      
-	      return "/ProductList";
-	   }
+	    return "/ProductList";
+	}
 	
 	//ProductList 페이징처리
-	@RequestMapping(value="/ProductList/paging", method=RequestMethod.POST)
+	@RequestMapping(value="/ProductList/paging/{categoryCode}", method=RequestMethod.POST)
 	@ResponseBody
-	public List<ProductVO> productPaging(@RequestBody HashMap<String, Object> reqHm) {
-		//List<ProductVO> productVOList = pm.getListByCategory(dataTransfer);
+	public List<ProductVO> productPaging(@PathVariable("categoryCode") int categoryCode, @RequestBody HashMap<String, Object> reqHm) {
 		log.info(reqHm);
 		page = new PageDTO(Integer.parseInt(reqHm.get("page").toString()), 6);
-		List<ProductVO> productVOList = pm.getListByCategory(page.getOffset(), Integer.parseInt(reqHm.get("categoryCode").toString()));
+		List<ProductVO> productVOList = pm.getListByCategory(page.getOffset(), categoryCode);
 		
 		return productVOList;
 	}
-	
-	//다음페이지 버튼 ajax 서버작업
-//	@RequestMapping(value="/ProductList/nextButton", method=RequestMethod.POST)
-//	@ResponseBody
-//	public HashMap<String, Object> nextButton(@RequestBody HashMap<String, Object> dataTransfer) {
-//		//ajax success로 전달한 데이터
-//		HashMap<String, Object> hm = new HashMap<String, Object>();
-//		
-//		//해당 페이지에 전달할 상품데이터 리스트
-//		List<ProductVO> productVOList = pm.getListByCategory(dataTransfer);
-//		hm.put("productList", productVOList);
-//		log.info(dataTransfer.get("categoryCode").getClass().getName());
-//		
-//		//카테고리코드
-//		int categoryCode = (int) dataTransfer.get("categoryCode");
-//		//총 페이지
-//		int totalPage = (int) (pm.getCount(categoryCode)/6)+1;
-//		hm.put("totalPage", totalPage);
-//		
-//		return hm;
-//	}
 	
 	@GetMapping("/ProductUpload")
 	public void toUploadPage(Model model, HttpSession session) {
